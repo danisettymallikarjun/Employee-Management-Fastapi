@@ -44,7 +44,7 @@ employee-api/
 3. **Run the application:**
 
    ```bash
-   uvicorn app.main:app --reload
+   uv run uvicorn app.main:app --reload
    ```
 
 4. **Open Swagger UI** in your browser to explore and test all endpoints:
