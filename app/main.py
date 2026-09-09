@@ -2,7 +2,7 @@
 FastAPI application entrypoint.
 
 Run with:
-    uvicorn app.main:app --reload
+    uv run uvicorn app.main:app --reload
 
 Then open http://127.0.0.1:8000/docs for Swagger UI.
 """
@@ -33,7 +33,10 @@ app = FastAPI(
 # before the route body even runs.
 EmployeeIdPath = Path(..., gt=0, description="Positive integer employee id")
 
-
+@app.get("/")
+def root():
+    return {"message": "Employee API is running"}
+    
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request, exc: RequestValidationError):
     """Return a clearer, consistent error body for validation failures
