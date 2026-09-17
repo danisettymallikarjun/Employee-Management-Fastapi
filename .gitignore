@@ -4,3 +4,5 @@ venv/
 .venv/
 *.egg-info/
 .pytest_cache/
+.env
+*.env.txt
