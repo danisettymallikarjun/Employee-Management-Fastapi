@@ -1,48 +1,49 @@
 """
-FastAPI application entrypoint.
+FastAPI application entrypoint backed by MySQL and SQLAlchemy.
 
 Run with:
-    uv run uvicorn app.main:app --reload
-
+        uv run python -m uvicorn app.main:app --reload
+        
 Then open http://127.0.0.1:8000/docs for Swagger UI.
 """
 
-from fastapi import FastAPI, HTTPException, Path, status
-from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse
+from contextlib import asynccontextmanager
+from typing import Any
 
+from fastapi import Depends, FastAPI, HTTPException, Path, status  # type: ignore[reportMissingImports]
+from fastapi.exceptions import RequestValidationError  # type: ignore[reportMissingImports]
+from fastapi.responses import JSONResponse  # type: ignore[reportMissingImports]
+from app.database import Base, engine, get_db
 from app.schemas import Employee, EmployeeCreate, EmployeeUpdate, ErrorResponse
 from app.services import (
     DuplicateEmailError,
     EmployeeNotFoundError,
-    employee_service,
+    EmployeeService,
 )
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Automatically creates the 'employees' table in MySQL if it doesn't exist
+    Base.metadata.create_all(bind=engine)
+    yield
+
 
 app = FastAPI(
     title="Employee Records API",
-    description=(
-        "A simple FastAPI backend for managing employee records, backed by "
-        "an in-memory Python list. Data resets on restart; no database in "
-        "this stage of the project."
-    ),
-    version="1.0.0",
+    description="FastAPI backend backed by MySQL and SQLAlchemy.",
+    version="2.0.0",
+    lifespan=lifespan,
 )
 
-# A reusable path parameter with a strict validation rule: id must be a
-# positive integer (gt=0), so 0 or negative ids are rejected with a 422
-# before the route body even runs.
 EmployeeIdPath = Path(..., gt=0, description="Positive integer employee id")
 
 @app.get("/")
 def root():
     return {"message": "Employee API is running"}
-    
+
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request, exc: RequestValidationError):
-    """Return a clearer, consistent error body for validation failures
-    (missing required fields, bad email format, invalid work_mode, invalid
-    id, etc.) instead of FastAPI's default verbose structure.
-    """
     messages = []
     for error in exc.errors():
         loc = ".".join(str(part) for part in error["loc"] if part != "body")
@@ -55,7 +56,6 @@ async def validation_exception_handler(request, exc: RequestValidationError):
 
 @app.get("/health", tags=["Health"], summary="Health check")
 def health_check() -> dict:
-    """Simple liveness check used to confirm the application is running."""
     return {"status": "ok"}
 
 
@@ -70,9 +70,12 @@ def health_check() -> dict:
         422: {"model": ErrorResponse, "description": "Validation error"},
     },
 )
-def create_employee(payload: EmployeeCreate) -> Employee:
+def create_employee(
+    payload: EmployeeCreate,
+    db: Any = Depends(get_db),
+) -> Employee:
     try:
-        return employee_service.create_employee(payload)
+        return EmployeeService.create_employee(db, payload)
     except DuplicateEmailError as exc:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc))
 
@@ -83,8 +86,8 @@ def create_employee(payload: EmployeeCreate) -> Employee:
     tags=["Employees"],
     summary="List all employees",
 )
-def list_employees() -> list[Employee]:
-    return employee_service.list_employees()
+def list_employees(db: Any = Depends(get_db)) -> list[Employee]:
+    return EmployeeService.list_employees(db)
 
 
 @app.get(
@@ -94,9 +97,12 @@ def list_employees() -> list[Employee]:
     summary="Get an employee by ID",
     responses={404: {"model": ErrorResponse, "description": "Employee not found"}},
 )
-def get_employee(employee_id: int = EmployeeIdPath) -> Employee:
+def get_employee(
+    employee_id: int = EmployeeIdPath,
+    db: Any = Depends(get_db),
+) -> Employee:
     try:
-        return employee_service.get_employee(employee_id)
+        return EmployeeService.get_employee(db, employee_id)
     except EmployeeNotFoundError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
 
@@ -112,9 +118,13 @@ def get_employee(employee_id: int = EmployeeIdPath) -> Employee:
         422: {"model": ErrorResponse, "description": "Validation error"},
     },
 )
-def update_employee(payload: EmployeeUpdate, employee_id: int = EmployeeIdPath) -> Employee:
+def update_employee(
+    payload: EmployeeUpdate,
+    employee_id: int = EmployeeIdPath,
+    db: Any = Depends(get_db),
+) -> Employee:
     try:
-        return employee_service.update_employee(employee_id, payload)
+        return EmployeeService.update_employee(db, employee_id, payload)
     except EmployeeNotFoundError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
     except DuplicateEmailError as exc:
@@ -128,8 +138,11 @@ def update_employee(payload: EmployeeUpdate, employee_id: int = EmployeeIdPath) 
     summary="Delete an employee",
     responses={404: {"model": ErrorResponse, "description": "Employee not found"}},
 )
-def delete_employee(employee_id: int = EmployeeIdPath) -> None:
+def delete_employee(
+    employee_id: int = EmployeeIdPath,
+    db: Any = Depends(get_db),
+) -> None:
     try:
-        employee_service.delete_employee(employee_id)
+        EmployeeService.delete_employee(db, employee_id)
     except EmployeeNotFoundError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))

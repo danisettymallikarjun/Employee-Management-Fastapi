@@ -12,7 +12,7 @@ Two "shapes" of employee model are defined:
 from datetime import datetime
 from enum import Enum
 
-from pydantic import BaseModel, EmailStr, Field, ConfigDict
+from pydantic import BaseModel, ConfigDict, EmailStr, Field , field_validator    # type: ignore[import-not-found]
 
 
 class WorkMode(str, Enum):
@@ -34,6 +34,16 @@ class EmployeeBase(BaseModel):
     work_mode: WorkMode = Field(..., description="Either WFH or WFO")
     is_active: bool = Field(default=True, description="Whether the employee is currently active")
 
+
+    @field_validator("name", "department", "primary_skill", "location", mode="before")
+    @classmethod
+    def check_not_empty_whitespace(cls, value: str) -> str:
+        if isinstance(value, str):
+            stripped = value.strip()
+            if not stripped:
+                raise ValueError("Field cannot be empty or contain only whitespace.")
+            return stripped
+        return value
 
 class EmployeeCreate(EmployeeBase):
     """Payload for POST /employees. id/created_at are server-generated."""
@@ -62,3 +72,4 @@ class ErrorResponse(BaseModel):
     """Generic error envelope used for documented error responses in Swagger."""
 
     detail: str
+
