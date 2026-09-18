@@ -26,7 +26,8 @@ employee-api/
 │   ├── models.py        # SQLAlchemy ORM model for MySQL 'employees' table
 │   ├── schemas.py       # Pydantic validation schemas & field validators
 │   └── services.py      # Database CRUD logic & transaction handling
-├── screenshots/         # API execution screenshots
+├── screenshots/         # Project screenshots
+├── swagger_screenshots/ # Swagger UI API execution screenshots
 ├── .env.example         # Environment template with placeholder values
 ├── .gitignore           # Git ignore file (excludes .env and virtual environments)
 ├── requirements.txt     # Project dependencies
