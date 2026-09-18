@@ -55,11 +55,11 @@ Copy-Item .env.example .env
 Open `.env` and configure your MySQL connection details:
 
 ```ini
-DB_HOST=localhost
-DB_PORT=3306
-DB_USER=root
-DB_PASSWORD=your_mysql_password
-DB_NAME=employee_db
+DB_HOST=your_db_host
+DB_PORT=your_db_port
+DB_USER=your_db_username
+DB_PASSWORD=your_db_password
+DB_NAME=your_db_name
 ```
 
 > **Security Note:** The `.env` file is excluded from Git tracking via `.gitignore` to prevent exposing database credentials.
