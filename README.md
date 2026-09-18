@@ -26,6 +26,7 @@ employee-api/
 │   ├── models.py        # SQLAlchemy ORM model for MySQL 'employees' table
 │   ├── schemas.py       # Pydantic validation schemas & field validators
 │   └── services.py      # Database CRUD logic & transaction handling
+├── task_2_screenshots/ # Task 2 API execution screenshots
 ├── screenshots/         # Project screenshots
 ├── swagger_screenshots/ # Swagger UI API execution screenshots
 ├── .env.example         # Environment template with placeholder values
@@ -97,12 +98,40 @@ Open your browser and navigate to:
 
 | Method | Endpoint | Description | Status Codes |
 | :--- | :--- | :--- | :--- |
+| **GET** | `/` | Root application status | `200 OK` |
 | **GET** | `/health` | Application liveness check | `200 OK` |
 | **POST** | `/employees` | Create a new employee record | `201 Created`, `409 Conflict`, `422 Unprocessable` |
 | **GET** | `/employees` | List all employee records | `200 OK` |
 | **GET** | `/employees/{id}` | Get employee by integer ID | `200 OK`, `404 Not Found`, `422 Unprocessable` |
 | **PUT** | `/employees/{id}` | Update employee record (full replace) | `200 OK`, `404 Not Found`, `409 Conflict`, `422 Unprocessable` |
 | **DELETE** | `/employees/{id}` | Delete employee record | `204 No Content`, `404 Not Found`, `422 Unprocessable` |
+
+---
+
+## Task 2 Screenshots & API Execution Evidence
+
+Visual demonstration of all API endpoints executed via Swagger UI:
+
+### 1. Root Endpoint (`GET /`)
+![Root Endpoint](task_2_screenshots/Get%20root.png)
+
+### 2. Health Check (`GET /health`)
+![Health Check](task_2_screenshots/Health.png)
+
+### 3. Create Employee (`POST /employees`)
+![Create Employee](task_2_screenshots/create_Employees.png)
+
+### 4. List All Employees (`GET /employees`)
+![List All Employees](task_2_screenshots/List%20all%20Employees.png)
+
+### 5. Get Employee by ID (`GET /employees/{id}`)
+![Get Employee by ID](task_2_screenshots/Employees_ID.png)
+
+### 6. Update Employee (`PUT /employees/{id}`)
+![Update Employee](task_2_screenshots/Update_all_Employees.png)
+
+### 7. Delete Employee (`DELETE /employees/{id}`)
+![Delete Employee](task_2_screenshots/Delete_Employee_Details.png)
 
 ---
 
