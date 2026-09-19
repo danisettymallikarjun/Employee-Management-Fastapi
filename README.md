@@ -27,6 +27,7 @@ employee-api/
 │   ├── schemas.py       # Pydantic validation schemas & field validators
 │   └── services.py      # Database CRUD logic & transaction handling
 ├── Task_2_screenshots/ # Task 2 API execution screenshots & documentation
+├── swagger_screenshots/ # Swagger UI documentation screenshots
 ├── .env.example         # Environment template with placeholder values
 ├── .gitignore           # Git ignore file (excludes .env and virtual environments)
 ├── requirements.txt     # Project dependencies
