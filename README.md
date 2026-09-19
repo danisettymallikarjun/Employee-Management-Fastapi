@@ -113,25 +113,25 @@ Open your browser and navigate to:
 Visual demonstration of all API endpoints executed via Swagger UI:
 
 ### 1. Root Endpoint (`GET /`)
-![Root Endpoint](task_2_screenshots/Get%20root.png)
+![Root Endpoint](Task_2_screenshots/Get%20root.png)
 
 ### 2. Health Check (`GET /health`)
-![Health Check](task_2_screenshots/Health.png)
+![Health Check](Task_2_screenshots/Health.png)
 
 ### 3. Create Employee (`POST /employees`)
-![Create Employee](task_2_screenshots/create_Employees.png)
+![Create Employee](Task_2_screenshots/create_Employees.png)
 
 ### 4. List All Employees (`GET /employees`)
-![List All Employees](task_2_screenshots/List%20all%20Employees.png)
+![List All Employees](Task_2_screenshots/List%20all%20Employees.png)
 
 ### 5. Get Employee by ID (`GET /employees/{id}`)
-![Get Employee by ID](task_2_screenshots/Employees_ID.png)
+![Get Employee by ID](Task_2_screenshots/Employees_ID.png)
 
 ### 6. Update Employee (`PUT /employees/{id}`)
-![Update Employee](task_2_screenshots/Update_all_Employees.png)
+![Update Employee](Task_2_screenshots/Update_all_Employees.png)
 
 ### 7. Delete Employee (`DELETE /employees/{id}`)
-![Delete Employee](task_2_screenshots/Delete_Employee_Details.png)
+![Delete Employee](Task_2_screenshots/Delete_Employee_Details.png)
 
 ---
 
