@@ -26,7 +26,7 @@ employee-api/
 │   ├── models.py        # SQLAlchemy ORM model for MySQL 'employees' table
 │   ├── schemas.py       # Pydantic validation schemas & field validators
 │   └── services.py      # Database CRUD logic & transaction handling
-├── task_2_screenshots/ # Task 2 API execution screenshots
+├── Task_2_screenshots/ # Task 2 API execution screenshots & README
 ├── screenshots/         # Project screenshots
 ├── swagger_screenshots/ # Swagger UI API execution screenshots
 ├── .env.example         # Environment template with placeholder values
@@ -110,7 +110,7 @@ Open your browser and navigate to:
 
 ## Task 2 Screenshots & API Execution Evidence
 
-Visual demonstration of all API endpoints executed via Swagger UI:
+Visual demonstration of all API endpoints executed via Swagger UI. Detailed photo paths and verification are available in [`Task_2_screenshots/README.md`](Task_2_screenshots/README.md):
 
 ### 1. Root Endpoint (`GET /`)
 ![Root Endpoint](Task_2_screenshots/Get%20root.png)
