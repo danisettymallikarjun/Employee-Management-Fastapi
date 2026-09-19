@@ -21,17 +21,18 @@ A FastAPI backend for managing employee records, persisted in a MySQL database u
 employee-api/
 ├── app/
 │   ├── __init__.py
-│   ├── main.py          # FastAPI app, lifespan setup & route endpoints
-│   ├── database.py      # SQLAlchemy engine, session maker & get_db dependency
-│   ├── models.py        # SQLAlchemy ORM model for MySQL 'employees' table
-│   ├── schemas.py       # Pydantic validation schemas & field validators
-│   └── services.py      # Database CRUD logic & transaction handling
-├── Task_2_screenshots/ # Task 2 API execution screenshots & documentation
-├── swagger_screenshots/ # Swagger UI documentation screenshots
-├── .env.example         # Environment template with placeholder values
-├── .gitignore           # Git ignore file (excludes .env and virtual environments)
-├── requirements.txt     # Project dependencies
-└── README.md            # Setup, execution & architecture documentation
+│   ├── database.py          # SQLAlchemy engine, MySQL connection & session dependency
+│   ├── main.py              # FastAPI application entrypoint, lifespan & routes
+│   ├── models.py            # SQLAlchemy ORM model for MySQL 'employees' table
+│   ├── schemas.py           # Pydantic validation schemas & field validators
+│   └── services.py          # Database CRUD logic & transaction handling
+├── swagger_screenshots/     # Swagger UI & API execution screenshots
+│   ├── Task_2_screenshots/  # Task 2 execution screenshots for all endpoints
+│   └── README.md            # Visual gallery & screenshot documentation
+├── .env.example             # Environment template with placeholder values
+├── .gitignore               # Git ignore file (excludes .env and virtual environments)
+├── requirements.txt         # Project dependencies
+└── README.md                # Setup, execution & architecture documentation
 ```
 
 ---
@@ -109,28 +110,28 @@ Open your browser and navigate to:
 
 ## Task 2 Screenshots & API Execution Evidence
 
-Visual demonstration of all API endpoints executed via Swagger UI. Detailed photo paths and verification are available in [`Task_2_screenshots/README.md`](Task_2_screenshots/README.md):
+Visual demonstration of all API endpoints executed via Swagger UI. Detailed photo gallery is available in [`swagger_screenshots/README.md`](swagger_screenshots/README.md):
 
 ### 1. Root Endpoint (`GET /`)
-![Root Endpoint](Task_2_screenshots/Get%20root.png)
+![Root Endpoint](swagger_screenshots/Task_2_screenshots/Get%20root.png)
 
 ### 2. Health Check (`GET /health`)
-![Health Check](Task_2_screenshots/Health.png)
+![Health Check](swagger_screenshots/Task_2_screenshots/Health.png)
 
 ### 3. Create Employee (`POST /employees`)
-![Create Employee](Task_2_screenshots/create_Employees.png)
+![Create Employee](swagger_screenshots/Task_2_screenshots/create_Employees.png)
 
 ### 4. List All Employees (`GET /employees`)
-![List All Employees](Task_2_screenshots/List%20all%20Employees.png)
+![List All Employees](swagger_screenshots/Task_2_screenshots/List%20all%20Employees.png)
 
 ### 5. Get Employee by ID (`GET /employees/{id}`)
-![Get Employee by ID](Task_2_screenshots/Employees_ID.png)
+![Get Employee by ID](swagger_screenshots/Task_2_screenshots/Employees_ID.png)
 
 ### 6. Update Employee (`PUT /employees/{id}`)
-![Update Employee](Task_2_screenshots/Update_all_Employees.png)
+![Update Employee](swagger_screenshots/Task_2_screenshots/Update_all_Employees.png)
 
 ### 7. Delete Employee (`DELETE /employees/{id}`)
-![Delete Employee](Task_2_screenshots/Delete_Employee_Details.png)
+![Delete Employee](swagger_screenshots/Task_2_screenshots/Delete_Employee_Details.png)
 
 ---
 
