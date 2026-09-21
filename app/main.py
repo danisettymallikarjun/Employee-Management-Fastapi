@@ -78,8 +78,7 @@ def create_employee(
         return EmployeeService.create_employee(db, payload)
     except DuplicateEmailError as exc:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc))
-
-
+    
 @app.get(
     "/employees",
     response_model=list[Employee],
@@ -129,8 +128,7 @@ def update_employee(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
     except DuplicateEmailError as exc:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc))
-
-
+    
 @app.delete(
     "/employees/{employee_id}",
     status_code=status.HTTP_204_NO_CONTENT,
@@ -146,3 +144,4 @@ def delete_employee(
         EmployeeService.delete_employee(db, employee_id)
     except EmployeeNotFoundError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
+   

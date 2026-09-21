@@ -2,6 +2,8 @@
 Database service layer for employee records using SQLAlchemy.
 """
 
+from sqlalchemy import func
+from sqlalchemy.exc import IntegrityError
 from typing import Any, Optional
 # Keep the service usable when SQLAlchemy's ORM stubs are unavailable to the
 # type checker; the concrete session is supplied by the application at runtime.
@@ -26,7 +28,6 @@ class DuplicateEmailError(Exception):
         self.email = email
         super().__init__(f"Email '{email}' is already registered")
 
-
 class EmployeeService:
     """SQLAlchemy-backed CRUD service for employee records."""
 
@@ -47,9 +48,9 @@ class EmployeeService:
     def get_employee_by_email(
         db: Session, email: str, exclude_id: Optional[int] = None
     ) -> Optional[EmployeeModel]:
-        """Check if an email already exists (case-insensitive)."""
+        """Check if an email already exists (case-insensitive exact match)."""
         query = db.query(EmployeeModel).filter(
-            EmployeeModel.email.ilike(email.strip())
+            func.lower(EmployeeModel.email) == email.strip().lower()
         )
         if exclude_id is not None:
             query = query.filter(EmployeeModel.id != exclude_id)
@@ -75,11 +76,14 @@ class EmployeeService:
             db.commit()
             db.refresh(employee)
             return employee
+        except IntegrityError as error:
+            db.rollback()
+            raise DuplicateEmailError(payload.email) from error
         except Exception as error:
             db.rollback()
-            if error.__class__.__name__ == "IntegrityError":
-                raise DuplicateEmailError(payload.email) from error
-            raise
+            raise RuntimeError(
+                "Database operation failed. Please try again."
+            ) from error
 
     @staticmethod
     def update_employee(
@@ -105,11 +109,14 @@ class EmployeeService:
             db.commit()
             db.refresh(employee)
             return employee
+        except IntegrityError as error:
+            db.rollback()
+            raise DuplicateEmailError(payload.email) from error
         except Exception as error:
             db.rollback()
-            if error.__class__.__name__ == "IntegrityError":
-                raise DuplicateEmailError(payload.email) from error
-            raise
+            raise RuntimeError(
+                "Database operation failed. Please try again."
+            ) from error
 
     @staticmethod
     def delete_employee(db: Session, employee_id: int) -> None:
@@ -118,6 +125,8 @@ class EmployeeService:
         try:
             db.delete(employee)
             db.commit()
-        except Exception:
+        except Exception as error:
             db.rollback()
-            raise
+            raise RuntimeError(
+                "Unable to delete the employee due to a database error. Please try again."
+            ) from error
