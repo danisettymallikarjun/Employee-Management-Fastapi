@@ -21,18 +21,17 @@ A FastAPI backend for managing employee records, persisted in a MySQL database u
 employee-api/
 ├── app/
 │   ├── __init__.py
-│   ├── database.py          # SQLAlchemy engine, MySQL connection & session dependency
-│   ├── main.py              # FastAPI application entrypoint, lifespan & routes
-│   ├── models.py            # SQLAlchemy ORM model for MySQL 'employees' table
-│   ├── schemas.py           # Pydantic validation schemas & field validators
-│   └── services.py          # Database CRUD logic & transaction handling
-├── swagger_screenshots/     # Swagger UI & API execution screenshots
-│   ├── Task_2_screenshots/  # Task 2 execution screenshots for all endpoints
-│   └── README.md            # Visual gallery & screenshot documentation
-├── .env.example             # Environment template with placeholder values
-├── .gitignore               # Git ignore file (excludes .env and virtual environments)
-├── requirements.txt         # Project dependencies
-└── README.md                # Setup, execution & architecture documentation
+│   ├── main.py          # FastAPI app, lifespan setup & route endpoints
+│   ├── database.py      # SQLAlchemy engine, session maker & get_db dependency
+│   ├── models.py        # SQLAlchemy ORM model for MySQL 'employees' table
+│   ├── schemas.py       # Pydantic validation schemas & field validators
+│   └── services.py      # Database CRUD logic & transaction handling
+├── swagger_screenshots/ # Swagger UI API execution screenshots
+│   └── Task_2_screenshots # Task 2 API execution screenshots
+├── .env.example         # Environment template with placeholder values
+├── .gitignore           # Git ignore file (excludes .env and virtual environments)
+├── requirements.txt     # Project dependencies
+└── README.md            # Setup, execution & architecture documentation
 ```
 
 ---
@@ -110,7 +109,7 @@ Open your browser and navigate to:
 
 ## Task 2 Screenshots & API Execution Evidence
 
-Visual demonstration of all API endpoints executed via Swagger UI. Detailed photo gallery is available in [`swagger_screenshots/README.md`](swagger_screenshots/README.md):
+Visual demonstration of all API endpoints executed via Swagger UI: 
 
 ### 1. Root Endpoint (`GET /`)
 ![Root Endpoint](swagger_screenshots/Task_2_screenshots/Get%20root.png)
