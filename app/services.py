@@ -34,12 +34,22 @@ class EmployeeService:
     @staticmethod
     def list_employees(db: Session) -> list[EmployeeModel]:
         """Fetch all employees from the MySQL database."""
-        return db.query(EmployeeModel).all()
+        try:
+            return db.query(EmployeeModel).all()
+        except Exception as error:
+            raise RuntimeError(
+                "Database operation failed. Please try again."
+            ) from error
 
     @staticmethod
     def get_employee(db: Session, employee_id: int) -> EmployeeModel:
         """Fetch a single employee by ID from MySQL."""
-        employee = db.query(EmployeeModel).filter(EmployeeModel.id == employee_id).first()
+        try:
+            employee = db.query(EmployeeModel).filter(EmployeeModel.id == employee_id).first()
+        except Exception as error:
+            raise RuntimeError(
+                "Database operation failed. Please try again."
+            ) from error
         if employee is None:
             raise EmployeeNotFoundError(employee_id)
         return employee

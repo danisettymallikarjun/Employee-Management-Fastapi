@@ -68,6 +68,7 @@ def health_check() -> dict:
     responses={
         409: {"model": ErrorResponse, "description": "Email already registered"},
         422: {"model": ErrorResponse, "description": "Validation error"},
+        500: {"model": ErrorResponse, "description": "Internal server error"},
     },
 )
 def create_employee(
@@ -78,15 +79,25 @@ def create_employee(
         return EmployeeService.create_employee(db, payload)
     except DuplicateEmailError as exc:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc))
+    except RuntimeError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(exc)
+        )
     
 @app.get(
     "/employees",
     response_model=list[Employee],
     tags=["Employees"],
     summary="List all employees",
+    responses={500: {"model": ErrorResponse, "description": "Internal server error"}},
 )
 def list_employees(db: Any = Depends(get_db)) -> list[Employee]:
-    return EmployeeService.list_employees(db)
+    try:
+        return EmployeeService.list_employees(db)
+    except RuntimeError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(exc)
+        )
 
 
 @app.get(
@@ -94,7 +105,10 @@ def list_employees(db: Any = Depends(get_db)) -> list[Employee]:
     response_model=Employee,
     tags=["Employees"],
     summary="Get an employee by ID",
-    responses={404: {"model": ErrorResponse, "description": "Employee not found"}},
+    responses={
+        404: {"model": ErrorResponse, "description": "Employee not found"},
+        500: {"model": ErrorResponse, "description": "Internal server error"},
+    },
 )
 def get_employee(
     employee_id: int = EmployeeIdPath,
@@ -104,6 +118,10 @@ def get_employee(
         return EmployeeService.get_employee(db, employee_id)
     except EmployeeNotFoundError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
+    except RuntimeError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(exc)
+        )
 
 
 @app.put(
@@ -115,6 +133,7 @@ def get_employee(
         404: {"model": ErrorResponse, "description": "Employee not found"},
         409: {"model": ErrorResponse, "description": "Email already registered"},
         422: {"model": ErrorResponse, "description": "Validation error"},
+        500: {"model": ErrorResponse, "description": "Internal server error"},
     },
 )
 def update_employee(
@@ -128,13 +147,20 @@ def update_employee(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
     except DuplicateEmailError as exc:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc))
+    except RuntimeError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(exc)
+        )
     
 @app.delete(
     "/employees/{employee_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     tags=["Employees"],
     summary="Delete an employee",
-    responses={404: {"model": ErrorResponse, "description": "Employee not found"}},
+    responses={
+        404: {"model": ErrorResponse, "description": "Employee not found"},
+        500: {"model": ErrorResponse, "description": "Internal server error"},
+    },
 )
 def delete_employee(
     employee_id: int = EmployeeIdPath,
@@ -144,4 +170,8 @@ def delete_employee(
         EmployeeService.delete_employee(db, employee_id)
     except EmployeeNotFoundError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
+    except RuntimeError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(exc)
+        )
    
