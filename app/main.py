@@ -14,7 +14,7 @@ from fastapi import Depends, FastAPI, HTTPException, Path, status  # type: ignor
 from fastapi.exceptions import RequestValidationError  # type: ignore[reportMissingImports]
 from fastapi.responses import JSONResponse  # type: ignore[reportMissingImports]
 from app.database import Base, engine, get_db
-from app.schemas import Employee, EmployeeCreate, EmployeeUpdate, ErrorResponse
+from app.schemas import Employee, EmployeeCreate, EmployeeUpdate, ErrorResponse , WorkMode
 from app.services import (
     DuplicateEmailError,
     EmployeeNotFoundError,
