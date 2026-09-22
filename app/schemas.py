@@ -73,3 +73,9 @@ class ErrorResponse(BaseModel):
 
     detail: str
 
+class EmployeeListResponse(BaseModel):
+    """Envelope response for the paginated employee list."""
+    total: int
+    limit: int
+    offset: int
+    items: list[Employee]
