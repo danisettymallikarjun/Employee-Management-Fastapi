@@ -10,7 +10,7 @@ from typing import Any, Optional
 Session = Any
 
 from app.models import EmployeeModel
-from app.schemas import EmployeeCreate, EmployeeUpdate
+from app.schemas import EmployeeCreate, EmployeeUpdate , WorkMode
 
 
 class EmployeeNotFoundError(Exception):
@@ -32,10 +32,39 @@ class EmployeeService:
     """SQLAlchemy-backed CRUD service for employee records."""
 
     @staticmethod
-    def list_employees(db: Session) -> list[EmployeeModel]:
-        """Fetch all employees from the MySQL database."""
+    def list_employees(
+        db: Session,
+        search: Optional[str] = None,
+        department: Optional[str] = None,
+        work_mode: Optional[WorkMode] = None,             
+        is_active: Optional[bool] = None,             
+        limit: int = 10,              
+        offset: int = 0 
+    ) -> tuple[int, list[EmployeeModel]]:
+        """Filter, search, and paginate employees in MySQL."""
         try:
-            return db.query(EmployeeModel).all()
+            query = db.query(EmployeeModel)
+            if search and search.strip():
+                query = query.filter(
+                    func.lower(EmployeeModel.name).contains(search.strip().lower())
+                )
+                
+            if department and department.strip():
+                query = query.filter(
+                    func.lower(EmployeeModel.department) == department.strip().lower()
+                )
+                
+            if work_mode:
+                query = query.filter(EmployeeModel.work_mode == work_mode.value)
+            
+            if is_active is not None:
+                query = query.filter(EmployeeModel.is_active == is_active)
+            
+            total = query.count()
+            
+            items = query.order_by(EmployeeModel.id.asc()).offset(offset).limit(limit).all()
+            return total, items
+            
         except Exception as error:
             raise RuntimeError(
                 "Database operation failed. Please try again."
