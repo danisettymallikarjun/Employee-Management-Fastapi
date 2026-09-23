@@ -49,7 +49,6 @@ class EmployeeCreate(EmployeeBase):
     """Payload for POST /employees. id/created_at are server-generated."""
     pass
 
-
 class EmployeeUpdate(EmployeeBase):
     """Payload for PUT /employees/{id}.
 
@@ -58,7 +57,6 @@ class EmployeeUpdate(EmployeeBase):
     """
     pass
 
-
 class Employee(EmployeeBase):
     """Full employee record as returned by the API."""
 
@@ -66,7 +64,6 @@ class Employee(EmployeeBase):
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
-
 
 class ErrorResponse(BaseModel):
     """Generic error envelope used for documented error responses in Swagger."""

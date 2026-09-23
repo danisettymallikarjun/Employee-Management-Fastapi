@@ -2,8 +2,8 @@
 Database service layer for employee records using SQLAlchemy.
 """
 
-from sqlalchemy import func
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy import func  # type: ignore[reportMissingImports]
+from sqlalchemy.exc import IntegrityError  # type: ignore[reportMissingImports]
 from typing import Any, Optional
 # Keep the service usable when SQLAlchemy's ORM stubs are unavailable to the
 # type checker; the concrete session is supplied by the application at runtime.
@@ -11,7 +11,6 @@ Session = Any
 
 from app.models import EmployeeModel
 from app.schemas import EmployeeCreate, EmployeeUpdate , WorkMode
-
 
 class EmployeeNotFoundError(Exception):
     """Raised when an employee with the given id does not exist."""
@@ -42,8 +41,10 @@ class EmployeeService:
         offset: int = 0 
     ) -> tuple[int, list[EmployeeModel]]:
         """Filter, search, and paginate employees in MySQL."""
+    
         try:
             query = db.query(EmployeeModel)
+            
             if search and search.strip():
                 query = query.filter(
                     func.lower(EmployeeModel.name).contains(search.strip().lower())
