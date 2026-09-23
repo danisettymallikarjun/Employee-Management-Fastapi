@@ -8,13 +8,13 @@ Then open http://127.0.0.1:8000/docs for Swagger UI.
 """
 
 from contextlib import asynccontextmanager
-from typing import Any
+from typing import Any, Optional
 
-from fastapi import Depends, FastAPI, HTTPException, Path, status  # type: ignore[reportMissingImports]
+from fastapi import Depends, FastAPI, HTTPException, Path, Query, status  # type: ignore[reportMissingImports]
 from fastapi.exceptions import RequestValidationError  # type: ignore[reportMissingImports]
 from fastapi.responses import JSONResponse  # type: ignore[reportMissingImports]
 from app.database import Base, engine, get_db
-from app.schemas import Employee, EmployeeCreate, EmployeeUpdate, ErrorResponse , WorkMode
+from app.schemas import ( Employee, EmployeeCreate, EmployeeUpdate, ErrorResponse , EmployeeListResponse , WorkMode, )
 from app.services import (
     DuplicateEmailError,
     EmployeeNotFoundError,
@@ -83,17 +83,54 @@ def create_employee(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(exc)
         )
-    
+            
 @app.get(
     "/employees",
-    response_model=list[Employee],
+    response_model=EmployeeListResponse,
     tags=["Employees"],
-    summary="List all employees",
-    responses={500: {"model": ErrorResponse, "description": "Internal server error"}},
+    summary="List all employees With Search,Filter and Pagination",
+    responses={
+        422: {"model": ErrorResponse, "description": "Validation error"},
+        500: {"model": ErrorResponse, "description": "Internal server error"}
+        },
 )
-def list_employees(db: Any = Depends(get_db)) -> list[Employee]:
+def list_employees(
+        search: Optional[str] = Query(
+        default=None, description="Search employee name (partial match, case-insensitive)"
+    ),
+    department: Optional[str] = Query(
+        default=None, description="Filter by department"
+    ),
+    work_mode: Optional[WorkMode] = Query(
+        default=None, description="Filter by WFH or WFO"
+    ),
+    is_active: Optional[bool] = Query(
+        default=None, description="Filter by active status (true/false)"
+    ),
+    limit: int = Query(
+        default=10, ge=1, le=100, description="Number of records to return (1-100)"
+    ),
+    offset: int = Query(
+        default=0, ge=0, description="Number of records to skip"
+    ),
+    db: Any = Depends(get_db),
+) -> dict:
     try:
-        return EmployeeService.list_employees(db)
+        total, items = EmployeeService.list_employees(
+            db=db,
+            search=search,
+            department=department,
+            work_mode=work_mode,
+            is_active=is_active,
+            limit=limit,
+            offset=offset,
+        )
+        return {
+            "total": total,
+            "limit": limit,
+            "offset": offset,
+            "items": items,
+        }
     except RuntimeError as exc:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(exc)
