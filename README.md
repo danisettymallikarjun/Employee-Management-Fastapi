@@ -136,14 +136,14 @@ Instead of returning a flat array, `GET /employees` returns an envelope object c
   "items": [
     {
       "id": 2,
-      "name": "surya",
-      "email": "surya@gmail.com",
+      "name": "string",
+      "email": "string@gmail.com",
       "department": "Engineering",
       "primary_skill": "FastAPI & MySQL",
       "location": "chennai",
       "work_mode": "WFO",
       "is_active": true,
-      "created_at": "2026-09-17T06:09:11"
+      "created_at": "2026-09-12T06:09:1"
     }
   ]
 }
