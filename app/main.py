@@ -191,7 +191,7 @@ def update_employee(
     
 @app.delete(
     "/employees/{employee_id}",
-    status_code=status.HTTP_204_NO_CONTENT,
+    status_code=status.HTTP_204_OK,
     tags=["Employees"],
     summary="Delete an employee",
     responses={
@@ -202,13 +202,13 @@ def update_employee(
 def delete_employee(
     employee_id: int = EmployeeIdPath,
     db: Any = Depends(get_db),
-) -> None:
-    try:
-        EmployeeService.delete_employee(db, employee_id)
-    except EmployeeNotFoundError as exc:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
-    except RuntimeError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(exc)
-        )
+) -> dict:
+        try:
+                EmployeeService.delete_employee(db, employee_id)
+        except EmployeeNotFoundError as exc:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
+        except RuntimeError as exc:
+                raise HTTPException(
+                        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(exc)
+                )
    
