@@ -11,6 +11,7 @@ Two "shapes" of employee model are defined:
 
 from datetime import datetime
 from enum import Enum
+from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field , field_validator    # type: ignore[import-not-found]
 
@@ -76,3 +77,63 @@ class EmployeeListResponse(BaseModel):
     limit: int
     offset: int
     items: list[Employee]
+
+class WorkItemStatus(str, Enum):
+    TODO = "TODO"
+    IN_PROGRESS = "IN_PROGRESS"
+    COMPLETED = "COMPLETED"
+
+
+class WorkItemPriority(str, Enum):
+    LOW = "LOW"
+    MEDIUM = "MEDIUM"
+    HIGH = "HIGH"
+
+
+class EmployeeSummary(BaseModel):
+    """Basic employee details nested inside WorkItem responses."""
+    id: int
+    name: str
+    email: EmailStr
+    model_config = ConfigDict(from_attributes=True)
+
+
+class WorkItemBase(BaseModel):
+    title: str = Field(..., min_length=1, description="Title of the work item")
+    status: WorkItemStatus = Field(default=WorkItemStatus.TODO, description="Task status")
+    priority: WorkItemPriority = Field(default=WorkItemPriority.MEDIUM, description="Task priority")
+    due_date: Optional[date] = Field(default=None, description="Optional due date (YYYY-MM-DD)")
+
+    @field_validator("title", mode="before")
+    @classmethod
+    def check_title_not_empty_whitespace(cls, value: str) -> str:
+        if isinstance(value, str):
+            stripped = value.strip()
+            if not stripped:
+                raise ValueError("Title cannot be empty or contain only whitespace.")
+            return stripped
+        return value
+
+class WorkItemCreate(WorkItemBase):
+    """Payload for POST /work-items."""
+    employee_id: int = Field(..., gt=0, description="Positive integer employee id")
+
+class WorkItemUpdate(WorkItemBase):
+    """Payload for PUT /work-items/{id}."""
+    employee_id: int = Field(..., gt=0, description="Positive integer employee id")
+
+class WorkItem(WorkItemBase):
+    """Full work item returned by the API, including assigned employee."""
+    id: int
+    employee_id: int
+    created_at: datetime
+    assigned_employee: EmployeeSummary
+
+    model_config = ConfigDict(from_attributes=True)
+
+class WorkItemListResponse(BaseModel):
+    """Envelope response for the paginated work items list."""
+    total: int
+    limit: int
+    offset: int
+    items: list[WorkItem]
