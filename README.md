@@ -28,10 +28,10 @@ employee-api/
 │   ├── services.py       # Database CRUD operations, business logic, and queries
 │   └── main.py           # FastAPI routes, controllers, and dependency injection
 ├── swagger_screenshots/  # API verification screenshots
-│   ├── Task_2_screenshots/  # Task 2 CRUD & MySQL persistence screenshots
-│   ├── Task_3_screenshots/  # Task 3 Employee search, filter & pagination screenshots
-│   └── Task_4_screenshots/  # Task 4 Work Item management & relationship test screenshots
-├── .env.example          # Environment template
+│   ├── Task_2_screenshots/  # Task 2 screenshots
+│   ├── Task_3_screenshots/  # Task 3 screenshots
+│   └── Task_4_screenshots/  # Task 4 test screenshots
+├── .env.example          
 ├── .gitignore
 ├── requirements.txt
 └── README.md
@@ -176,11 +176,11 @@ EXIT;
 ### 2. Configure `.env`
 Create a `.env` file in the project root:
 ```env
-DB_HOST=localhost
-DB_PORT=3306
-DB_USER=root
+DB_HOST=YOUR_HOST_NAME
+DB_PORT=YOUR_PORT_NUMBER
+DB_USER=YOUR_USER_ROOT
 DB_PASSWORD=YOUR_MYSQL_PASSWORD
-DB_NAME=employee_db
+DB_NAME=YOUR_DATABASE_NAME
 ```
 
 ---
