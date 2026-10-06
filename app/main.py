@@ -14,28 +14,30 @@ from fastapi import Depends, FastAPI, HTTPException, Path, Query, status  # type
 from fastapi.exceptions import RequestValidationError  # type: ignore[reportMissingImports]
 from fastapi.responses import JSONResponse  # type: ignore[reportMissingImports]
 from app.database import Base, engine, get_db
-from app.schemas import ( Employee, EmployeeCreate, EmployeeUpdate, ErrorResponse , EmployeeListResponse , WorkMode, )
+from app.schemas import ( 
+    Employee, EmployeeCreate, EmployeeUpdate, ErrorResponse , EmployeeListResponse , WorkMode, 
+    WorkItem, WorkItemCreate, WorkItemUpdate, WorkItemListResponse, WorkItemStatus, WorkItemPriority,)
+
 from app.services import (
     DuplicateEmailError,
     EmployeeNotFoundError,
     EmployeeService,
-)
-
+    WorkItemNotFoundError,
+    WorkItemService,)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Automatically creates the 'employees' table in MySQL if it doesn't exist
     Base.metadata.create_all(bind=engine)
     yield
-
-
+    
 app = FastAPI(
     title="Employee Records API",
     description="FastAPI backend backed by MySQL and SQLAlchemy.",
     version="2.0.0",
-    lifespan=lifespan,
-)
+    lifespan=lifespan,)
 
+WorkItemIdPath = Path(..., gt=0, description="Positive integer work item id")
 EmployeeIdPath = Path(..., gt=0, description="Positive integer employee id")
 
 @app.get("/")
@@ -191,7 +193,7 @@ def update_employee(
     
 @app.delete(
     "/employees/{employee_id}",
-    status_code=status.HTTP_204_OK,
+    status_code=status.HTTP_200_OK,
     tags=["Employees"],
     summary="Delete an employee",
     responses={
@@ -203,12 +205,157 @@ def delete_employee(
     employee_id: int = EmployeeIdPath,
     db: Any = Depends(get_db),
 ) -> dict:
-        try:
-                EmployeeService.delete_employee(db, employee_id)
-        except EmployeeNotFoundError as exc:
-                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
-        except RuntimeError as exc:
-                raise HTTPException(
-                        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(exc)
-                )
+    try:
+        EmployeeService.delete_employee(db, employee_id)
+        return {"message": f"Employee with id {employee_id} deleted successfully"}
+    except EmployeeNotFoundError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
+    except RuntimeError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(exc))
+            
+# WORK ITEMS ENDPOINTS 
+
+@app.post(
+    "/work-items",
+    response_model=WorkItem,
+    status_code=status.HTTP_201_CREATED,
+    tags=["Work Items"],
+    summary="Create and assign a work item to an employee",
+    responses={
+        404: {"model": ErrorResponse, "description": "Assigned employee not found"},
+        422: {"model": ErrorResponse, "description": "Validation error"},
+        500: {"model": ErrorResponse, "description": "Internal server error"},
+    },
+)
+def create_work_item(
+    payload: WorkItemCreate,
+    db: Any = Depends(get_db),
+) -> WorkItem:
+    try:
+        return WorkItemService.create_work_item(db, payload)
+    except EmployeeNotFoundError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
+    except RuntimeError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(exc))
+        
+@app.get(
+    "/work-items",
+    response_model=WorkItemListResponse,
+    tags=["Work Items"],
+    summary="List work items with search, filters and pagination",
+    responses={
+        422: {"model": ErrorResponse, "description": "Validation error"},
+        500: {"model": ErrorResponse, "description": "Internal server error"},
+    },
+)
+def list_work_items(
+    search: Optional[str] = Query(
+        default=None, description="Partial and case-insensitive search on title"
+    ),
+    employee_id: Optional[int] = Query(
+        default=None, gt=0, description="Filter by assigned employee ID"
+    ),
+    status: Optional[WorkItemStatus] = Query(
+        default=None, description="Filter by status (TODO, IN_PROGRESS, COMPLETED)"
+    ),
+    priority: Optional[WorkItemPriority] = Query(
+        default=None, description="Filter by priority (LOW, MEDIUM, HIGH)"
+    ),
+    limit: int = Query(
+        default=10, ge=1, le=100, description="Number of records to return (1-100)"
+    ),
+    offset: int = Query(
+        default=0, ge=0, description="Number of records to skip"
+    ),
+    db: Any = Depends(get_db),
+) -> dict:
+    try:
+        total, items = WorkItemService.list_work_items(
+            db=db,
+            search=search,
+            employee_id=employee_id,
+            status=status,
+            priority=priority,
+            limit=limit,
+            offset=offset,
+        )
+        return {
+            "total": total,
+            "limit": limit,
+            "offset": offset,
+            "items": items,
+        }
+    except RuntimeError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(exc))
+
+@app.get(
+    "/work-items/{work_item_id}",
+    response_model=WorkItem,
+    tags=["Work Items"],
+    summary="Get one work item by ID",
+    responses={
+        404: {"model": ErrorResponse, "description": "Work item not found"},
+        500: {"model": ErrorResponse, "description": "Internal server error"},
+    },
+)
+def get_work_item(
+    work_item_id: int = WorkItemIdPath,
+    db: Any = Depends(get_db),
+) -> WorkItem:
+    try:
+        return WorkItemService.get_work_item(db, work_item_id)
+    except WorkItemNotFoundError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
+    except RuntimeError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(exc))
+        
+@app.put(
+    "/work-items/{work_item_id}",
+    response_model=WorkItem,
+    tags=["Work Items"],
+    summary="Update work item or reassign to another employee",
+    responses={
+        404: {"model": ErrorResponse, "description": "Work item or employee not found"},
+        422: {"model": ErrorResponse, "description": "Validation error"},
+        500: {"model": ErrorResponse, "description": "Internal server error"},
+    },
+)
+def update_work_item(
+    payload: WorkItemUpdate,
+    work_item_id: int = WorkItemIdPath,
+    db: Any = Depends(get_db),
+) -> WorkItem:
+    try:
+        return WorkItemService.update_work_item(db, work_item_id, payload)
+    except (WorkItemNotFoundError, EmployeeNotFoundError) as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
+    except RuntimeError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(exc))
+        
+@app.delete(
+    "/work-items/{work_item_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    tags=["Work Items"],
+    summary="Delete a work item",
+    responses={
+        404: {"model": ErrorResponse, "description": "Work item not found"},
+        500: {"model": ErrorResponse, "description": "Internal server error"},
+    },
+)
+def delete_work_item(
+    work_item_id: int = WorkItemIdPath,
+    db: Any = Depends(get_db),
+) -> None:
+    try:
+        WorkItemService.delete_work_item(db, work_item_id)
+    except WorkItemNotFoundError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
+    except RuntimeError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(exc))
    
