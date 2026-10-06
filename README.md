@@ -1,4 +1,4 @@
-# Employee Records API (Task 3 - Search, Filtering & Pagination)
+# Employee Records API (Search, Filtering & Pagination)
 
 A FastAPI backend for managing employee records, persisted in a MySQL database using SQLAlchemy ORM. Employee records remain permanently available across restarts, and the API supports advanced filtering, partial-name search, and database-level pagination with envelope responses.
 
@@ -29,6 +29,7 @@ employee-api/
 ├── swagger_screenshots/     # Swagger UI API execution screenshots
 │   ├── Task_2_screenshots/  # Task 2 CRUD & persistence screenshots
 │   └── Task_3_screenshots/  # Task 3 Search, filter & pagination screenshots
+│   └── Task_4_screenshots/  # Task 4 Swagger UI test screenshots
 │   └── README.md            # Screenshots documentation & previews
 ├── .env.example             # Environment template with placeholder values
 ├── .gitignore               # Git ignore file (excludes .env and virtual environments)
