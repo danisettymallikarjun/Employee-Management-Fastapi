@@ -463,26 +463,3 @@ DELETE /work-items/1
 * **Reassignment Validation:**  
   * *Difficulty:* Reassigning a work item to an employee who does not exist could cause orphaned or corrupt task allocations.
   * *Solution:* Added pre-checks verifying that the target employee exists (returning `404`) before updating.
-
----
-
-## Testing Evidence & Screenshots
-
-All 14 test scenarios required for Task 4 were executed and validated in Swagger UI:
-
-| # | Test Scenario | Expected Outcome | Screenshot File |
-|---|:---|:---|:---|
-| 1 | Create work item for existing employee | `201 Created` with nested employee | ![Create](swagger_screenshots/Task_4_screenshots/create_work_item.png) |
-| 2 | Assign work item to nonexistent employee | `404 Not Found` ("Employee with id ... not found") | ![Nonexistent](swagger_screenshots/Task_4_screenshots/Non_existing_employee.png) |
-| 3 | Retrieve work item by ID | `200 OK` with full details & assigned employee | ![Retrieve](swagger_screenshots/Task_4_screenshots/Retrieve_work_id.png) |
-| 4 | Search using part of work item title | `200 OK` matching partial case-insensitive text | ![Search](swagger_screenshots/Task_4_screenshots/search_work_item_title.png) |
-| 5 | Filter by employee, status & priority | `200 OK` matching all specified criteria | ![Filter](swagger_screenshots/Task_4_screenshots/Filter_employee_status_priority.png) |
-| 6 | Test combined filters | `200 OK` combining search, employee, and status | ![Combined](swagger_screenshots/Task_4_screenshots/Test_combined_filters.png) |
-| 7 | Pagination using limit and offset | `200 OK` showing correct page subsets & total count | ![Pagination](swagger_screenshots/Task_4_screenshots/Different_limit_and_offset_values.png) |
-| 8 | Update work item & reassign employee | `200 OK` with updated details and new employee | ![Update](swagger_screenshots/Task_4_screenshots/Update_work_item.png) |
-| 9 | Invalid status and priority values | `422 Unprocessable Entity` validation message | ![Invalid Enum](swagger_screenshots/Task_4_screenshots/Invalid_status_and_priority.png) |
-| 10 | Blank title validation | `422 Unprocessable Entity` ("Title cannot be empty") | ![Blank Title](swagger_screenshots/Task_4_screenshots/Blank_title.png) |
-| 11 | Missing work item ID | `404 Not Found` ("Work item with id ... not found") | ![Missing ID](swagger_screenshots/Task_4_screenshots/Missing_work_item_id.png) |
-| 12 | Delete a work item | `204 No Content` (item removed from MySQL) | ![Delete](swagger_screenshots/Task_4_screenshots/Delete_work_item.png) |
-| 13 | Restart application and confirm persistence | `200 OK` data remains intact after reboot | ![Restart](swagger_screenshots/Task_4_screenshots/Restart_%20application.png) |
-| 14 | Confirm existing employee APIs still work | `200 OK` zero regression on employee endpoints | ![Regression](swagger_screenshots/Task_4_screenshots/Employee_still_working.png) |
