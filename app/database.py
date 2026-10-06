@@ -16,7 +16,6 @@ def load_dotenv_file(path=".env"):
             key, value = line.split("=", 1)
             os.environ.setdefault(key.strip(), value.strip().strip("'\""))
 
-
 load_dotenv_file()
 
 DB_HOST = os.getenv("DB_HOST", "localhost")

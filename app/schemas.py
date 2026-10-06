@@ -9,20 +9,17 @@ Two "shapes" of employee model are defined:
 - Employee        -> what the API returns (includes id, created_at, etc.)
 """
 
-from datetime import datetime
+from datetime import date, datetime
 from enum import Enum
 from typing import Optional
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field , field_validator    # type: ignore[import-not-found]
-
-
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator  # type: ignore[import-not-found]
 class WorkMode(str, Enum):
     """Allowed values for work_mode. Using an Enum means FastAPI/Pydantic
     will automatically reject anything other than WFH or WFO with a 422."""
 
     WFH = "WFH"
     WFO = "WFO"
-
 
 class EmployeeBase(BaseModel):
     """Fields shared between create and update requests."""
@@ -34,7 +31,6 @@ class EmployeeBase(BaseModel):
     location: str = Field(..., min_length=1, description="Work location / city")
     work_mode: WorkMode = Field(..., description="Either WFH or WFO")
     is_active: bool = Field(default=True, description="Whether the employee is currently active")
-
 
     @field_validator("name", "department", "primary_skill", "location", mode="before")
     @classmethod
@@ -77,6 +73,8 @@ class EmployeeListResponse(BaseModel):
     limit: int
     offset: int
     items: list[Employee]
+    
+    # ---------------- Work Item Enums & Schemas (Task 4) ----------------
 
 class WorkItemStatus(str, Enum):
     TODO = "TODO"
@@ -95,6 +93,7 @@ class EmployeeSummary(BaseModel):
     id: int
     name: str
     email: EmailStr
+
     model_config = ConfigDict(from_attributes=True)
 
 

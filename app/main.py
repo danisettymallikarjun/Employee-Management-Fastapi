@@ -213,8 +213,10 @@ def delete_employee(
     except RuntimeError as exc:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(exc))
-            
-# WORK ITEMS ENDPOINTS 
+        
+# ==========================================
+# WORK ITEMS ENDPOINTS (Task 4)
+# ==========================================
 
 @app.post(
     "/work-items",

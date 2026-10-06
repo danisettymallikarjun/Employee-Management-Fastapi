@@ -9,9 +9,9 @@ from typing import Any, Optional
 # type checker; the concrete session is supplied by the application at runtime.
 Session = Any
 
-from app.models import EmployeeModel
-from app.schemas import EmployeeCreate, EmployeeUpdate , WorkMode
-
+from app.models import EmployeeModel , WorkItemModel
+from app.schemas import (EmployeeCreate, EmployeeUpdate , WorkMode, WorkItemCreate, WorkItemUpdate, 
+                          WorkItemStatus, WorkItemPriority)
 class EmployeeNotFoundError(Exception):
     """Raised when an employee with the given id does not exist."""
 
@@ -27,6 +27,13 @@ class DuplicateEmailError(Exception):
         self.email = email
         super().__init__(f"Email '{email}' is already registered")
 
+class WorkItemNotFoundError(Exception):
+    """Raised when a work item with the given id does not exist."""
+    
+    def __init__(self, work_item_id: int):
+        self.work_item_id = work_item_id
+        super().__init__(f"Work item with id {work_item_id} not found")
+        
 class EmployeeService:
     """SQLAlchemy-backed CRUD service for employee records."""
 
@@ -170,7 +177,7 @@ class EmployeeService:
             raise RuntimeError(
                 "Unable to delete the employee due to a database error. Please try again."
             ) from error
-
+            
 class WorkItemService:
     """SQLAlchemy-backed CRUD service for work items."""
 

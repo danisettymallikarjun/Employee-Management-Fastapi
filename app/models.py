@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
-from sqlalchemy import Boolean, Column, DateTime, Integer, String  # pyright: ignore[reportMissingImports]
+from sqlalchemy import Boolean, Column, Date, DateTime, ForeignKey, Integer, String, Text  # pyright: ignore[reportMissingImports]
+from sqlalchemy.orm import relationship  # pyright: ignore[reportMissingImports]
 from app.database import Base
 
 class EmployeeModel(Base):
@@ -19,7 +20,7 @@ class EmployeeModel(Base):
         nullable=False,
     )
 
- work_items = relationship("WorkItemModel", back_populates="assigned_employee")
+    work_items = relationship("WorkItemModel", back_populates="assigned_employee")
 class WorkItemModel(Base):
     __tablename__ = "work_items"
 
