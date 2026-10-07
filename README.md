@@ -214,7 +214,7 @@ DB_NAME=YOUR_DATABASE_NAME
 | `GET` | `/employees` | List employees (with search, filters & pagination) | `200`, `422` |
 | `GET` | `/employees/{id}` | Get employee by ID | `200`, `404`, `422` |
 | `PUT` | `/employees/{id}` | Update employee details | `200`, `404`, `409`, `422` |
-| `DELETE` | `/employees/{id}` | Delete employee | `200`, `404`, `422` |
+| `DELETE` | `/employees/{id}` | Delete employee (blocked if assigned tasks exist) | `200`, `404`, `409`, `422` |
 | `POST` | `/work-items` | Create and assign a work item to an employee | `201`, `404`, `422` |
 | `GET` | `/work-items` | List work items (with search, filters & pagination) | `200`, `422` |
 | `GET` | `/work-items/{work_item_id}` | Get single work item by ID | `200`, `404`, `422` |
@@ -390,7 +390,9 @@ DELETE /work-items/1
 |---|---|---|
 | **Non-existent Work Item** | `404 Not Found` | `{"detail": "Work item with id {id} not found"}` |
 | **Non-existent Employee (Assign / Reassign)** | `404 Not Found` | `{"detail": "Employee with id {employee_id} not found"}` |
+| **Deleting Employee with Assigned Work Items** | `409 Conflict` | `{"detail": "Cannot delete employee with id {id} because they have assigned work items"}` |
 | **Blank or Whitespace-only Title** | `422 Unprocessable Content` | `{"detail": "title: Title cannot be empty or contain only whitespace."}` |
+| **Title Exceeding 255 Characters** | `422 Unprocessable Content` | `{"detail": "title: Title cannot exceed 255 characters."}` |
 | **Invalid Status or Priority Value** | `422 Unprocessable Content` | `{"detail": "status: Input should be 'TODO', 'IN_PROGRESS' or 'COMPLETED'"}` |
 | **Negative or Zero IDs (`id <= 0`)** | `422 Unprocessable Content` | Enforced by FastAPI's `Path(..., gt=0)` and Pydantic's `Field(..., gt=0)` |
 | **Pagination Out of Range (`limit > 100`, `limit < 1`, `offset < 0`)** | `422 Unprocessable Content` | Enforced by FastAPI's `Query(ge=1, le=100)` and `Query(ge=0)` |
@@ -406,6 +408,8 @@ DELETE /work-items/1
 4. **Pre-Pagination Total:** The `total` field in `GET /work-items` reflects the total number of matching records before `limit` and `offset` are evaluated.
 5. **Partial Title Search:** The `search` query parameter evaluates against `WorkItemModel.title` using case-insensitive SQL matching (`func.lower()` and `LIKE %...%`).
 6. **No Orphaned Records:** Deleting a work item deletes only the task; the employee remains untouched.
+7. **Deletion Protection:** Deleting an employee who has assigned work items is strictly blocked with `409 Conflict` to maintain referential integrity and avoid orphaned records.
+8. **Title Length Constraints:** Work item titles must be non-empty and contain between 1 and 255 characters.
 
 ---
 
@@ -463,3 +467,13 @@ DELETE /work-items/1
 * **Reassignment Validation:**  
   * *Difficulty:* Reassigning a work item to an employee who does not exist could cause orphaned or corrupt task allocations.
   * *Solution:* Added pre-checks verifying that the target employee exists (returning `404`) before updating.
+* **Query Parameter Clashing with FastAPI's Status Import:**  
+  * *Difficulty:* Naming the route parameter `status: Optional[WorkItemStatus]` in `list_work_items` shadowed FastAPI's `from fastapi import status` import, causing database error handlers referencing `status.HTTP_500_INTERNAL_SERVER_ERROR` to crash with `AttributeError`.
+  * *Solution:* Renamed the internal Python parameter to `item_status` while maintaining the public query parameter name using `alias="status"` (`item_status: Optional[WorkItemStatus] = Query(default=None, alias="status")`).
+* **409 Conflict on Deleting Employee with Assigned Work Items:**  
+  * *Difficulty:* Attempting to delete an employee who has assigned work items caused a database foreign key constraint violation that previously surfaced as an unhandled `500 Internal Server Error`.
+  * *Solution:* Added a pre-deletion check and caught `IntegrityError` to raise `EmployeeHasAssignedWorkItemsError`, returning an informative `409 Conflict` message explaining that deletion is blocked by existing assigned tasks.
+* **Title Length Boundary Enforcement (255 Characters):**  
+  * *Difficulty:* The MySQL column is `String(255)`, but the schema previously only verified `min_length=1`, allowing titles longer than 255 characters to bypass Pydantic validation.
+  * *Solution:* Added `max_length=255` to Pydantic's `Field` and enforced `len(stripped) > 255` inside `@field_validator("title")` for both creation and update operations, returning a clean `422 Unprocessable Content` response.
+
