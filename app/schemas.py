@@ -98,7 +98,8 @@ class EmployeeSummary(BaseModel):
 
 
 class WorkItemBase(BaseModel):
-    title: str = Field(..., min_length=1, description="Title of the work item")
+    title: str = Field(..., min_length=1, max_length=255, description="Title of the work item (max 255 characters)")
+    description: Optional[str] = Field(default=None, description="Optional task description")
     status: WorkItemStatus = Field(default=WorkItemStatus.TODO, description="Task status")
     priority: WorkItemPriority = Field(default=WorkItemPriority.MEDIUM, description="Task priority")
     due_date: Optional[date] = Field(default=None, description="Optional due date (YYYY-MM-DD)")
@@ -110,6 +111,8 @@ class WorkItemBase(BaseModel):
             stripped = value.strip()
             if not stripped:
                 raise ValueError("Title cannot be empty or contain only whitespace.")
+            if len(stripped) > 255:
+                raise ValueError("Title cannot exceed 255 characters.")
             return stripped
         return value
 

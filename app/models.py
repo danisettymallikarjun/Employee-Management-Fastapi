@@ -26,6 +26,7 @@ class WorkItemModel(Base):
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     title = Column(String(255), nullable=False)
+    description = Column(Text, nullable=True)
     employee_id = Column(Integer, ForeignKey("employees.id"), nullable=False)
     status = Column(String(20), default="TODO", nullable=False)
     priority = Column(String(20), default="MEDIUM", nullable=False)

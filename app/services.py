@@ -33,6 +33,16 @@ class WorkItemNotFoundError(Exception):
     def __init__(self, work_item_id: int):
         self.work_item_id = work_item_id
         super().__init__(f"Work item with id {work_item_id} not found")
+
+
+class EmployeeHasAssignedWorkItemsError(Exception):
+    """Raised when attempting to delete an employee with assigned work items."""
+
+    def __init__(self, employee_id: int):
+        self.employee_id = employee_id
+        super().__init__(
+            f"Cannot delete employee with id {employee_id} because they have assigned work items"
+        )
         
 class EmployeeService:
     """SQLAlchemy-backed CRUD service for employee records."""
@@ -169,9 +179,22 @@ class EmployeeService:
     def delete_employee(db: Session, employee_id: int) -> None:
         """Delete an employee record from MySQL."""
         employee = EmployeeService.get_employee(db, employee_id)
+
+        # Check if employee has assigned work items before deleting
+        has_work_items = (
+            db.query(WorkItemModel)
+            .filter(WorkItemModel.employee_id == employee_id)
+            .first()
+        )
+        if has_work_items:
+            raise EmployeeHasAssignedWorkItemsError(employee_id)
+
         try:
             db.delete(employee)
             db.commit()
+        except IntegrityError as error:
+            db.rollback()
+            raise EmployeeHasAssignedWorkItemsError(employee_id) from error
         except Exception as error:
             db.rollback()
             raise RuntimeError(
@@ -189,6 +212,7 @@ class WorkItemService:
 
         work_item = WorkItemModel(
             title=payload.title,
+            description=payload.description,
             employee_id=payload.employee_id,
             status=payload.status.value,
             priority=payload.priority.value,
@@ -264,6 +288,7 @@ class WorkItemService:
         EmployeeService.get_employee(db, payload.employee_id)
 
         work_item.title = payload.title
+        work_item.description = payload.description
         work_item.employee_id = payload.employee_id
         work_item.status = payload.status.value
         work_item.priority = payload.priority.value

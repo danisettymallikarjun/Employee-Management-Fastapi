@@ -21,9 +21,11 @@ from app.schemas import (
 from app.services import (
     DuplicateEmailError,
     EmployeeNotFoundError,
+    EmployeeHasAssignedWorkItemsError,
     EmployeeService,
     WorkItemNotFoundError,
-    WorkItemService,)
+    WorkItemService,
+)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -198,6 +200,8 @@ def update_employee(
     summary="Delete an employee",
     responses={
         404: {"model": ErrorResponse, "description": "Employee not found"},
+        409: {"model": ErrorResponse, "description": "Employee has assigned work items"},
+        422: {"model": ErrorResponse, "description": "Validation error"},
         500: {"model": ErrorResponse, "description": "Internal server error"},
     },
 )
@@ -210,6 +214,8 @@ def delete_employee(
         return {"message": f"Employee with id {employee_id} deleted successfully"}
     except EmployeeNotFoundError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
+    except EmployeeHasAssignedWorkItemsError as exc:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc))
     except RuntimeError as exc:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(exc))
@@ -259,8 +265,10 @@ def list_work_items(
     employee_id: Optional[int] = Query(
         default=None, gt=0, description="Filter by assigned employee ID"
     ),
-    status: Optional[WorkItemStatus] = Query(
-        default=None, description="Filter by status (TODO, IN_PROGRESS, COMPLETED)"
+    item_status: Optional[WorkItemStatus] = Query(
+        default=None,
+        alias="status",
+        description="Filter by status (TODO, IN_PROGRESS, COMPLETED)",
     ),
     priority: Optional[WorkItemPriority] = Query(
         default=None, description="Filter by priority (LOW, MEDIUM, HIGH)"
@@ -278,7 +286,7 @@ def list_work_items(
             db=db,
             search=search,
             employee_id=employee_id,
-            status=status,
+            status=item_status,
             priority=priority,
             limit=limit,
             offset=offset,
