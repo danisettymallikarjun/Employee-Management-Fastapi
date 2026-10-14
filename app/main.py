@@ -14,14 +14,15 @@ from fastapi import Depends, FastAPI, HTTPException, Path, Query, status  # type
 from fastapi.exceptions import RequestValidationError  # type: ignore[reportMissingImports]
 from fastapi.responses import JSONResponse  # type: ignore[reportMissingImports]
 from app.database import Base, engine, get_db
-from app.schemas import ( 
-    Employee, EmployeeCreate, EmployeeUpdate, ErrorResponse , EmployeeListResponse , WorkMode, 
-    WorkItem, WorkItemCreate, WorkItemUpdate, WorkItemListResponse, WorkItemStatus, WorkItemPriority,)
+from app.schemas import ( Employee, EmployeeCreate, EmployeeUpdate, ErrorResponse , EmployeeListResponse , WorkMode, 
+WorkItem, WorkItemCreate, WorkItemUpdate, WorkItemListResponse, WorkItemStatus, WorkItemPriority,
+StatusUpdateRequest, WorkSummaryResponse,)
 
 from app.services import (
     DuplicateEmailError,
     EmployeeNotFoundError,
     EmployeeHasAssignedWorkItemsError,
+    InvalidStatusTransitionError,
     EmployeeService,
     WorkItemNotFoundError,
     WorkItemService,
@@ -244,6 +245,8 @@ def create_work_item(
         return WorkItemService.create_work_item(db, payload)
     except EmployeeNotFoundError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
+    except InvalidStatusTransitionError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
     except RuntimeError as exc:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(exc))
@@ -343,10 +346,36 @@ def update_work_item(
         return WorkItemService.update_work_item(db, work_item_id, payload)
     except (WorkItemNotFoundError, EmployeeNotFoundError) as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
+    except InvalidStatusTransitionError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
+    except RuntimeError as exc:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(exc))
+ 
+@app.patch("/work-items/{work_item_id}/status",
+    response_model=WorkItem,
+    tags=["Work Items"],
+    summary="Update work item status (TODO → IN_PROGRESS → COMPLETED)",
+    responses={
+        400: {"model": ErrorResponse, "description": "Invalid status transition"},
+        404: {"model": ErrorResponse, "description": "Work item not found"},
+        422: {"model": ErrorResponse, "description": "Validation error"},
+        500: {"model": ErrorResponse, "description": "Internal server error"},
+    },
+)
+def update_work_item_status(
+    payload: StatusUpdateRequest,
+    work_item_id: int = WorkItemIdPath,
+    db: Any = Depends(get_db),
+) -> WorkItem:
+    try:
+        return WorkItemService.update_work_item_status(db, work_item_id, payload.status)
+    except WorkItemNotFoundError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
+    except InvalidStatusTransitionError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
     except RuntimeError as exc:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(exc))
-        
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(exc))       
 @app.delete(
     "/work-items/{work_item_id}",
     status_code=status.HTTP_204_NO_CONTENT,
