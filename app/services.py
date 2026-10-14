@@ -34,7 +34,6 @@ class WorkItemNotFoundError(Exception):
         self.work_item_id = work_item_id
         super().__init__(f"Work item with id {work_item_id} not found")
 
-
 class EmployeeHasAssignedWorkItemsError(Exception):
     """Raised when attempting to delete an employee with assigned work items."""
 
@@ -43,7 +42,49 @@ class EmployeeHasAssignedWorkItemsError(Exception):
         super().__init__(
             f"Cannot delete employee with id {employee_id} because they have assigned work items"
         )
-        
+class InvalidStatusTransitionError(Exception):
+    """Raised when a status change violates the TODO → IN_PROGRESS → COMPLETED workflow."""
+    pass
+
+
+# ---- Task 5: Status Transition Rules ----
+# Allowed transitions: TODO → IN_PROGRESS → COMPLETED (forward only, no skipping)
+ALLOWED_TRANSITIONS = {
+    WorkItemStatus.TODO: WorkItemStatus.IN_PROGRESS,
+    WorkItemStatus.IN_PROGRESS: WorkItemStatus.COMPLETED,
+    # COMPLETED has no further transition
+}
+
+
+def validate_status_transition(current_status: str, new_status: WorkItemStatus) -> None:
+    """Reusable validation called by both PATCH and PUT handlers.
+
+    Rules:
+        - Same status → allowed (no-op, caller decides whether to skip DB write)
+        - TODO → IN_PROGRESS → COMPLETED → allowed (one step forward)
+        - Skipping a step or going backward → raises InvalidStatusTransitionError
+    """
+    current = WorkItemStatus(current_status)
+
+    # Same status is always allowed (no-op)
+    if current == new_status:
+        return
+
+    allowed_next = ALLOWED_TRANSITIONS.get(current)
+    if allowed_next != new_status:
+        if allowed_next:
+            msg = (
+                f"Cannot change status from {current.value} to {new_status.value}. "
+                f"Allowed: {current.value} → {allowed_next.value}"
+            )
+        else:
+            msg = (
+                f"Cannot change status from {current.value} to {new_status.value}. "
+                f"{current.value} is a final status with no further transitions"
+            )
+        raise InvalidStatusTransitionError(msg)
+
+
 class EmployeeService:
     """SQLAlchemy-backed CRUD service for employee records."""
 
@@ -210,6 +251,12 @@ class WorkItemService:
         # 1. Verify the assigned employee exists (raises 404 if not found)
         EmployeeService.get_employee(db, payload.employee_id)
 
+        # 2. Task 5: New work items must start with TODO
+        if payload.status != WorkItemStatus.TODO:
+            raise InvalidStatusTransitionError(
+                "New work items must start with status TODO"
+            )
+
         work_item = WorkItemModel(
             title=payload.title,
             description=payload.description,
@@ -282,15 +329,28 @@ class WorkItemService:
     def update_work_item(
         db: Session, work_item_id: int, payload: WorkItemUpdate
     ) -> WorkItemModel:
-        """Update work item details or reassign to another employee."""
+        """Update work item details or reassign to another employee.
+
+        Task 5: If status is provided, validate the transition BEFORE saving
+        any other fields. If the transition is invalid, reject the entire update.
+        If status is omitted (None), preserve the current status.
+        """
         work_item = WorkItemService.get_work_item(db, work_item_id)
         # Verify the new assigned employee exists (raises 404 if not found)
         EmployeeService.get_employee(db, payload.employee_id)
 
+        # Task 5: Validate status transition FIRST (before touching any fields)
+        # If this raises, no fields are modified — the entire update is rejected
+        if payload.status is not None:
+            validate_status_transition(work_item.status, payload.status)
+
+        # Now safe to apply all changes
         work_item.title = payload.title
         work_item.description = payload.description
         work_item.employee_id = payload.employee_id
-        work_item.status = payload.status.value
+        # Only update status if it was explicitly provided
+        if payload.status is not None:
+            work_item.status = payload.status.value
         work_item.priority = payload.priority.value
         work_item.due_date = payload.due_date
 
@@ -312,4 +372,53 @@ class WorkItemService:
         except Exception as error:
             db.rollback()
             raise RuntimeError("Database operation failed. Please try again.") from error
+
+    @staticmethod
+    def update_work_item_status(
+        db: Session, work_item_id: int, new_status: WorkItemStatus
+    ) -> WorkItemModel:
+        """PATCH: Update only the status field with transition validation.
+
+        - Same status → return existing record without DB write (no-op).
+        - Valid forward transition → update and commit.
+        - Invalid transition → raise InvalidStatusTransitionError.
+        """
+        work_item = WorkItemService.get_work_item(db, work_item_id)
+
+        # Same status = no-op, return without DB write
+        if work_item.status == new_status.value:
+            return work_item
+
+        # Validate the transition (raises InvalidStatusTransitionError if invalid)
+        validate_status_transition(work_item.status, new_status)
+
+        work_item.status = new_status.value
+        try:
+            db.commit()
+            db.refresh(work_item)
+            return work_item
+        except Exception as error:
+            db.rollback()
+            raise RuntimeError("Database operation failed. Please try again.") from error
+
+    @staticmethod
+    def get_work_summary(db: Session, employee_id: int) -> dict:
+        """GET: Count work items by status for an employee."""
+        from sqlalchemy import case
+        EmployeeService.get_employee(db, employee_id)  # raises 404 if not found
+
+        result = db.query(
+            func.count(WorkItemModel.id).label("total"),
+            func.sum(case((WorkItemModel.status == "TODO", 1), else_=0)).label("todo"),
+            func.sum(case((WorkItemModel.status == "IN_PROGRESS", 1), else_=0)).label("in_progress"),
+            func.sum(case((WorkItemModel.status == "COMPLETED", 1), else_=0)).label("completed"),
+        ).filter(WorkItemModel.employee_id == employee_id).first()
+
+        return {
+            "employee_id": employee_id,
+            "total_work_items": result.total or 0,
+            "todo": int(result.todo or 0),
+            "in_progress": int(result.in_progress or 0),
+            "completed": int(result.completed or 0),
+        }
             
