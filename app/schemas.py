@@ -121,6 +121,7 @@ class WorkItemCreate(WorkItemBase):
     employee_id: int = Field(..., gt=0, description="Positive integer employee id")
 
 class WorkItemUpdate(WorkItemBase):
+    class WorkItemUpdate(BaseModel):
     """Payload for PUT /work-items/{id}. Status is optional to preserve current value."""
     title: str = Field(..., min_length=1, max_length=255)
     description: Optional[str] = Field(default=None)
@@ -128,7 +129,19 @@ class WorkItemUpdate(WorkItemBase):
     status: Optional[WorkItemStatus] = Field(default=None, description="Omit to keep current status")
     priority: WorkItemPriority = Field(default=WorkItemPriority.MEDIUM)
     due_date: Optional[date] = Field(default=None)
-    
+
+    @field_validator("title", mode="before")
+    @classmethod
+    def check_title_not_empty_whitespace(cls, value: str) -> str:
+        if isinstance(value, str):
+            stripped = value.strip()
+            if not stripped:
+                raise ValueError("Title cannot be empty or contain only whitespace.")
+            if len(stripped) > 255:
+                raise ValueError("Title cannot exceed 255 characters.")
+            return stripped
+        return value
+        
 class WorkItem(WorkItemBase):
     """Full work item returned by the API, including assigned employee."""
     id: int
