@@ -220,10 +220,28 @@ def delete_employee(
     except RuntimeError as exc:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(exc))
-        
-# ==========================================
-# WORK ITEMS ENDPOINTS (Task 4)
-# ==========================================
+@app.get(
+    "/employees/{employee_id}/work-summary",
+    response_model=WorkSummaryResponse,
+    tags=["Employees"],
+    summary="Get work item summary counts for an employee",
+    responses={
+        404: {"model": ErrorResponse, "description": "Employee not found"},
+        422: {"model": ErrorResponse, "description": "Validation error"},
+        500: {"model": ErrorResponse, "description": "Internal server error"},
+    },
+)
+def get_work_summary(
+    employee_id: int = EmployeeIdPath,
+    db: Any = Depends(get_db),
+) -> dict:
+    try:
+        return WorkItemService.get_work_summary(db, employee_id)
+    except EmployeeNotFoundError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
+    except RuntimeError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(exc))
 
 @app.post(
     "/work-items",
