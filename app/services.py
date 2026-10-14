@@ -43,6 +43,10 @@ class EmployeeHasAssignedWorkItemsError(Exception):
         super().__init__(
             f"Cannot delete employee with id {employee_id} because they have assigned work items"
         )
+
+class InvalidStatusTransitionError(Exception):
+    """Raised when a status change violates the TODO → IN_PROGRESS → COMPLETED workflow."""
+    pass
         
 class EmployeeService:
     """SQLAlchemy-backed CRUD service for employee records."""
@@ -309,6 +313,27 @@ class WorkItemService:
         try:
             db.delete(work_item)
             db.commit()
+    @staticmethod
+    def get_work_summary(db: Session, employee_id: int) -> dict:
+        """GET: Count work items by status for an employee."""
+        from sqlalchemy import case
+        EmployeeService.get_employee(db, employee_id)  # raises 404 if not found
+
+        result = db.query(
+            func.count(WorkItemModel.id).label("total"),
+            func.sum(case((WorkItemModel.status == "TODO", 1), else_=0)).label("todo"),
+            func.sum(case((WorkItemModel.status == "IN_PROGRESS", 1), else_=0)).label("in_progress"),
+            func.sum(case((WorkItemModel.status == "COMPLETED", 1), else_=0)).label("completed"),
+        ).filter(WorkItemModel.employee_id == employee_id).first()
+
+        return {
+            "employee_id": employee_id,
+            "total_work_items": result.total or 0,
+            "todo": int(result.todo or 0),
+            "in_progress": int(result.in_progress or 0),
+            "completed": int(result.completed or 0),
+        }
+            
         except Exception as error:
             db.rollback()
             raise RuntimeError("Database operation failed. Please try again.") from error
