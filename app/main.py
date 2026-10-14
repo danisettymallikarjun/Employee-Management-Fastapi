@@ -220,6 +220,7 @@ def delete_employee(
     except RuntimeError as exc:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(exc))
+
 @app.get(
     "/employees/{employee_id}/work-summary",
     response_model=WorkSummaryResponse,
@@ -234,14 +235,14 @@ def delete_employee(
 def get_work_summary(
     employee_id: int = EmployeeIdPath,
     db: Any = Depends(get_db),
-) -> dict:
+    )-> dict:
     try:
         return WorkItemService.get_work_summary(db, employee_id)
     except EmployeeNotFoundError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
     except RuntimeError as exc:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(exc))
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(exc))  
 
 @app.post(
     "/work-items",
