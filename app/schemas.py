@@ -139,3 +139,16 @@ class WorkItemListResponse(BaseModel):
     limit: int
     offset: int
     items: list[WorkItem]
+
+
+class StatusUpdateRequest(BaseModel):
+    """Payload for PATCH /work-items/{id}/status. Status is required."""
+    status: WorkItemStatus
+
+class WorkSummaryResponse(BaseModel):
+    """Response for GET /employees/{id}/work-summary."""
+    employee_id: int
+    total_work_items: int
+    todo: int
+    in_progress: int
+    completed: int
