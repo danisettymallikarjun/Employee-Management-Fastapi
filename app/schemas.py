@@ -121,9 +121,14 @@ class WorkItemCreate(WorkItemBase):
     employee_id: int = Field(..., gt=0, description="Positive integer employee id")
 
 class WorkItemUpdate(WorkItemBase):
-    """Payload for PUT /work-items/{id}."""
-    employee_id: int = Field(..., gt=0, description="Positive integer employee id")
-
+    """Payload for PUT /work-items/{id}. Status is optional to preserve current value."""
+    title: str = Field(..., min_length=1, max_length=255)
+    description: Optional[str] = Field(default=None)
+    employee_id: int = Field(..., gt=0)
+    status: Optional[WorkItemStatus] = Field(default=None, description="Omit to keep current status")
+    priority: WorkItemPriority = Field(default=WorkItemPriority.MEDIUM)
+    due_date: Optional[date] = Field(default=None)
+    
 class WorkItem(WorkItemBase):
     """Full work item returned by the API, including assigned employee."""
     id: int
