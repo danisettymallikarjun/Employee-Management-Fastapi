@@ -190,22 +190,29 @@ DB_NAME=YOUR_DATABASE_NAME
 
 ---
 
-## How to Run
+## Getting Started & How to Run
 
-1. **Activate Virtual Environment:**
-   ```powershell
-   .\.venv\Scripts\Activate.ps1
-   ```
-2. **Install Dependencies:**
-   ```bash
-   pip install -r requirements.txt
-   ```
-3. **Start the Server:**
-   ```bash
-   python -m uvicorn app.main:app --reload --port 8000
-   ```
-4. **Open Swagger Documentation:**
-   Go to [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs) to test the endpoints interactively.
+### 1. Clone Repository & Checkout `task-5` Branch
+```bash
+git clone https://github.com/danisettymallikarjun/Employee-Management-Fastapi.git
+cd Employee-Management-Fastapi
+git checkout task-5
+```
+
+### 2. Set Up Virtual Environment & Dependencies
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+```
+
+### 3. Start the Server
+```bash
+python -m uvicorn app.main:app --reload --port 8000
+```
+
+### 4. Open Swagger Documentation
+Go to [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs) to test the endpoints interactively.
 
 ---
 
@@ -347,8 +354,9 @@ GET /work-items/1
 ### 4. Update Work Item or Reassign (`PUT /work-items/{work_item_id}`)
 * **Status:** `200 OK`
 * **Validation:** Work item must exist (otherwise `404`). If reassigning to another `employee_id`, target employee must exist (otherwise `404`).
-* **Status Preservation & Atomic Rejection (Task 5):**
+* **Status Preservation & Null Validation (Task 5):**
   * Omitting `status` from the request body preserves its current database value.
+  * Explicitly passing `"status": null` is strictly rejected with **`422 Unprocessable Content`** (`{"detail": "status: status cannot be null. Omit the field to preserve current status."}`).
   * If `status` is provided, it must strictly follow the workflow rules (`TODO → IN_PROGRESS → COMPLETED`).
   * If an invalid transition is supplied (e.g. `TODO → COMPLETED` or `COMPLETED → TODO`), the **entire update is rejected with `400 Bad Request`**, leaving all fields (title, priority, reassigned employee) unmodified.
 
@@ -496,6 +504,7 @@ DELETE /work-items/1
 | **Blank or Whitespace-only Title** | `422 Unprocessable Content` | `{"detail": "title: Title cannot be empty or contain only whitespace."}` |
 | **Title Exceeding 255 Characters** | `422 Unprocessable Content` | `{"detail": "title: Title cannot exceed 255 characters."}` |
 | **Invalid Status or Priority Value** | `422 Unprocessable Content` | `{"detail": "status: Input should be 'TODO', 'IN_PROGRESS' or 'COMPLETED'"}` |
+| **Explicit Null Status in PUT (`"status": null`)** *(Task 5)* | `422 Unprocessable Content` | `{"detail": "status: status cannot be null. Omit the field to preserve current status."}` |
 | **Missing or Null Status in PATCH** *(Task 5)* | `422 Unprocessable Content` | `{"detail": "status: Field required"}` |
 | **Negative or Zero IDs (`id <= 0`)** | `422 Unprocessable Content` | Enforced by FastAPI's `Path(..., gt=0)` and Pydantic's `Field(..., gt=0)` |
 | **Pagination Out of Range (`limit > 100`, `limit < 1`, `offset < 0`)** | `422 Unprocessable Content` | Enforced by FastAPI's `Query(ge=1, le=100)` and `Query(ge=0)` |

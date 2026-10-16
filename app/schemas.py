@@ -11,7 +11,7 @@ Two "shapes" of employee model are defined:
 
 from datetime import date, datetime
 from enum import Enum
-from typing import Optional
+from typing import Any,Optional
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator  # type: ignore[import-not-found]
 class WorkMode(str, Enum):
@@ -80,8 +80,7 @@ class WorkItemStatus(str, Enum):
     TODO = "TODO"
     IN_PROGRESS = "IN_PROGRESS"
     COMPLETED = "COMPLETED"
-
-
+    
 class WorkItemPriority(str, Enum):
     LOW = "LOW"
     MEDIUM = "MEDIUM"
@@ -93,9 +92,7 @@ class EmployeeSummary(BaseModel):
     id: int
     name: str
     email: EmailStr
-
     model_config = ConfigDict(from_attributes=True)
-
 
 class WorkItemBase(BaseModel):
     title: str = Field(..., min_length=1, max_length=255, description="Title of the work item (max 255 characters)")
@@ -115,7 +112,12 @@ class WorkItemBase(BaseModel):
                 raise ValueError("Title cannot exceed 255 characters.")
             return stripped
         return value
-
+    @field_validator("status", mode="before")
+    @classmethod
+    def check_status_not_null(cls, value: Any) -> Any:
+        if value is None:
+            raise ValueError("status cannot be null. Omit the field to preserve current status.")
+        return value
 class WorkItemCreate(WorkItemBase):
     """Payload for POST /work-items."""
     employee_id: int = Field(..., gt=0, description="Positive integer employee id")
@@ -125,7 +127,7 @@ class WorkItemUpdate(BaseModel):
     title: str = Field(..., min_length=1, max_length=255, description="Title of the work item (max 255 characters)")
     description: Optional[str] = Field(default=None, description="Optional task description")
     employee_id: int = Field(..., gt=0, description="Positive integer employee id")
-    status: Optional[WorkItemStatus] = Field(default=None, description="Omit to keep current status")
+    status: WorkItemStatus = Field(default=None, description="Omit to keep current status")
     priority: WorkItemPriority = Field(default=WorkItemPriority.MEDIUM, description="Task priority")
     due_date: Optional[date] = Field(default=None, description="Optional due date (YYYY-MM-DD)")
 
@@ -141,6 +143,12 @@ class WorkItemUpdate(BaseModel):
             return stripped
         return value
 
+    @field_validator("status", mode="before")
+    @classmethod
+    def check_status_not_null(cls, value: Any) -> Any:
+        if value is None:
+            raise ValueError("status cannot be null. Omit the field to preserve current status.")
+        return value
 class WorkItem(WorkItemBase):
     """Full work item returned by the API, including assigned employee."""
     id: int
@@ -157,13 +165,9 @@ class WorkItemListResponse(BaseModel):
     offset: int
     items: list[WorkItem]
 
-
-# ---------------- Task 5 Schemas ----------------
-
 class StatusUpdateRequest(BaseModel):
     """Payload for PATCH /work-items/{id}/status. Status is required."""
     status: WorkItemStatus
-
 
 class WorkSummaryResponse(BaseModel):
     """Response for GET /employees/{id}/work-summary."""
